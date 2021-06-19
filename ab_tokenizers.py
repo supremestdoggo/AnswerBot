@@ -1,7 +1,8 @@
 from tokenizers import Tokenizer
 from tokenizers.models import BPE
-from tokenizers.pre_tokenizers import Whitespace
+from tokenizers.pre_tokenizers import *
 from tokenizers.trainers import BpeTrainer
+import tokenizers
 
 
 class TokenNumberizer:
@@ -10,13 +11,13 @@ class TokenNumberizer:
         self.lookup = token_lookup
         self.tokens = TokenNumberizer.dict_sort(self.lookup)
         self.pretokenizer = Tokenizer(BPE())
-        self.pretokenizer.pre_tokenizer = Whitespace()
+        self.pretokenizer.pre_tokenizer = Sequence([Whitespace(), Digits(individual_digits=True)])
     
     @staticmethod
-    def convert_to_base(decimal_number: int, base: int, tokens) -> int:
-        if decimal_number == 0:
+    def convert_to_base(number: int, base: int, tokens: list) -> list:
+        if number == 0:
             return []
-        return tokens[decimal_number % base] + TokenNumberizer.convert_to_base(decimal_number // base, base, tokens)
+        return [tokens[number % base]] + TokenNumberizer.convert_to_base(number // base, base, tokens)
     
     @staticmethod
     def base_to_dec(lst, base: int, tokens) -> int:
@@ -32,12 +33,12 @@ class TokenNumberizer:
     def adapt(self, strings):
         self.pretokenizer.train_from_iterator(strings, trainer=TokenNumberizer.trainer)
         for string in strings:
-            for token in self.pretokenizer.encode(string):
+            for token in self.pretokenizer.encode(string).ids:
                 self.lookup[token] = self.lookup.get(token, 0) + 1
         self.tokens = TokenNumberizer.dict_sort(self.lookup)
     
-    def stoi(self, string):
-        return TokenNumberizer.base_to_dec(self.pretokenizer.encode(string), len(self.tokens), self.tokens)
+    def stoi(self, string: str):
+        return TokenNumberizer.base_to_dec(self.pretokenizer.encode(string).ids, len(self.tokens), self.tokens)
     
-    def itos(self, number):
+    def itos(self, number: int):
         return self.pretokenizer.decode(TokenNumberizer.convert_to_base(number, len(self.tokens), self.tokens))

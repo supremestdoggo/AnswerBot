@@ -3,6 +3,7 @@ import numpy as np
 import math
 
 
+
 def sigmoid(x):
     return 1 / (1 + math.exp(-x))
 
@@ -20,10 +21,12 @@ class NumberAI:
         else:
             return layers[-1](NumberAI.get_outputs(layers[:-1]))
     
-    def train(self, inputs, outputs, epochs=1):
+    def train(self, inputs, outputs, epochs=1, count=False):
         for x in range(epochs):
             for pos, i in enumerate(inputs):
                 self.model.fit(np.array([sigmoid(i)]), np.array([outputs[pos]]))
+                if count is True:
+                    print(f"Epoch: {x + 1}/{epochs}\nData index: {pos + 1}/{len(inputs)}")
     
     def predict(self, number):
         return self.model.predict(np.array([sigmoid(number)]))[0][0]

@@ -7,6 +7,9 @@ import math
 def sigmoid(x):
     return 1 / (1 + math.exp(-x))
 
+def numpy_sigmoid(x: np.ndarray) -> np.ndarray:
+    return np.divide(1, 1 + np.exp(np.multiply(-1, x)))
+
 def get_outputs(layers):
     if len(layers) == 1:
         return layers[0]
@@ -21,13 +24,11 @@ class NumberAI:
         self.model = tf.keras.Model(inputs=inputs, outputs=outputs)
         self.model.compile(optimizer="Adam", loss="mse", metrics=["mae"])
     
-    def train(self, inputs, outputs, epochs=1, **kwargs):
-        # self.model.fit(np.array([sigmoid(i)]), np.array([outputs[pos]]))
+    def train(self, inputs, outputs, epochs=1):
         sigmoid_inputs = [np.array([sigmoid(x)]) for x in inputs]
         array_outputs = [np.array([x]) for x in outputs]
-        train_data = tf.data.Dataset.from_tensor_slices((sigmoid_inputs, array_outputs))
-        self.model.fit(train_data, epochs=epochs, **kwargs)
-
+        training_data = tf.data.Dataset.from_tensor_slices((sigmoid_inputs, array_outputs))
+        self.model.fit(training_data, epochs=epochs)
     
     def predict(self, number):
         return self.model.predict(np.array([sigmoid(number)]))[0][0]
@@ -42,3 +43,13 @@ class ArrayAI:
         outputs = get_outputs([inputs] + hidden_layers + [tf.keras.layers.Dense(self.flat_output_shape[0])])
         self.model = tf.keras.Model(inputs=inputs, outputs=outputs)
         self.model.compile()
+    
+    def train(self, input_arrays, output_arrays, epochs=1):
+        sigmoid_inputs = [numpy_sigmoid(x) for x in input_arrays]
+        flat_outputs = [np.reshape(x, self.flat_output_shape) for x in output_arrays]
+        training_data = tf.data.Dataset.from_tensor_slices((sigmoid_inputs, flat_outputs))
+        self.model.fit(training_data, epochs=epochs)
+    
+    def predict(self, input_array):
+        flat_prediction = self.model.predict(numpy_sigmoid(input_array))
+        return np.reshape(flat_prediction, self.output_shape)

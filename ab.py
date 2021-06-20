@@ -4,6 +4,7 @@ import pickle
 
 
 class AnswerBot:
+    """Simple class for AI with text I/O."""
     def __init__(self):
         self.model = ab_models.NumberAI()
         self.tokenizer = ab_tokenizers.TokenNumberizer()
